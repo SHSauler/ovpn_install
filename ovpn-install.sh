@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 #
-#This script deploys OpenVPN auto-magically and can create client-keys.
-#Tested on Ubuntu 14.04, this will work on many Debian-based distros.
-#However, you might have to change some variables.
+# This script deploys OpenVPN auto-magically and can create client-keys.
+# Tested on Ubuntu 14.04, this will work on many Debian-based distros.
+# However, you might have to change some variables. Uncomment build_key 
+# in lines 80ff for multiple client-key-generation.
 #
-#LICENSE
-#Copyright (C) 2014 Steffen Sauler
-#This program is free software: you can redistribute it and/or modify
-#it under the terms of the GNU General Public License as published by
-#the Free Software Foundation, either version 3 of the License, or
-#(at your option) any later version.
-#This program is distributed in the hope that it will be useful,
-#but WITHOUT ANY WARRANTY; without even the implied warranty of
-#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-#GNU General Public License for more details.
+# LICENSE
+# Copyright (C) 2014 Steffen Sauler
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU General Public License for more details.
 #
-#SETTINGS
-#You MUST point these to your custom vars and server.conf-file
-#Make sure the EASY_RSA in vars points to the absolute path when 
-#running from outside /etc/openvpn/easy-rsa2/
+# SETTINGS
+# You MUST point these to your custom vars and server.conf-file
+# Make sure the EASY_RSA in vars points to the absolute path when
+# running from outside /etc/openvpn/easy-rsa2/
+
 VARSFILE="./vars"
 OVPNCONF="./server.conf"
 
@@ -42,9 +44,9 @@ function copy_examples {
     cp -r $EASYRSA $VPNPATH/easy-rsa2
     cp $USRPATH/examples/sample-config-files/server.conf.gz $VPNPATH
 
-	#The SSL-version we will be using
+    #The SSL-version we will be using
     cp $VPNPATH/easy-rsa2/openssl-1.0.0.cnf $VPNPATH/easy-rsa2/openssl.cnf
-    
+
     #Copy user configs
     cp $VARSFILE $VPNPATH/easy-rsa2/
     cp $OVPNCONF $VPNPATH
@@ -53,25 +55,25 @@ function copy_examples {
 
 function build_ca {
     mkdir $VPNPATH/easy-rsa2/keys
-    source $VPNPATH/easy-rsa2/vars     	  #Reading settings
-    bash $VPNPATH/easy-rsa2/clean-all	  #Will delete keys/
-	
-	#Avoiding user interaction by not calling build-ca
-	#(Creating the CA on the server itself might be a security issue)
-	export EASY_RSA="${EASY_RSA:-.}"
-	"$EASY_RSA/pkitool" --initca $*
-	
+    source $VPNPATH/easy-rsa2/vars        #Reading settings
+    bash $VPNPATH/easy-rsa2/clean-all     #Will delete keys/
+
+    #Avoiding user interaction by not calling build-ca
+    #(Creating the CA on the server itself might be a security issue)
+    export EASY_RSA="${EASY_RSA:-.}"
+    "$EASY_RSA/pkitool" --initca $*
+
     echo "###Successfully made Certificate Authority###"
 } &> /dev/null
 #Remove &> /dev/null to debug
 
 function build_key {
-	#Avoiding user interaction by not calling build-key
+    #Avoiding user interaction by not calling build-key
     export EASY_RSA="${EASY_RSA:-.}"
-	"$EASY_RSA/pkitool" $* &> /dev/null
+    "$EASY_RSA/pkitool" $* &> /dev/null
     echo "###Making key for $1###"
 }
-    
+
 #Test if setup-directories are where they ought to be
 if [[ -d "$USRPATH" && -d "$VPNPATH" ]]; then
     copy_examples
