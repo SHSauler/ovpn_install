@@ -29,28 +29,42 @@ VPNPATH="/etc/openvpn"
 EASYRSA="/usr/share/easy-rsa"
 
 #You must run this as sudo or root or install manually.
-hash openvpn 2>/dev/null || {
-    echo >&2 "###Installing openvpn and easy-rsa.###"
-    apt-get update
-    apt-get install openvpn easy-rsa
+#If you already installed OpenVPN and easy-rsa, this will do nothing
+function install {
+    if [ "$EUID" -ne 0 ]; then
+        echo "You have no permissions to install. Please run as root."
+    elif [[ $(dpkg-query -f'${Status}' --show openvpn 2>/dev/null)\
+            = *\ installed \
+         || $(dpkg-query -f'${Status}' --show easy-rsa 2>/dev/null)\
+            = *\ installed ]]; then
+        echo "OpenVPN and easy-rsa are already installed."
+    else
+        echo >&2 "###Installing openvpn and easy-rsa.###"
+        apt-get update
+        apt-get install openvpn easy-rsa
+    fi
 }
 
-echo "###OpenVPN and easy-rsa installed###"
+#Copy examples to local directory for editing
+function prepare {
+    cp $USRPATH/examples/sample-config-files/server.conf.gz .
+    gunzip -f ./server.conf.gz
+    cp -r $EASYRSA/vars .
+}
 
 function copy_examples {
     #Copy examples
-    cp $USRPATH/examples/sample-config-files/server.conf.gz /etc/openvpn/
+    cp $USRPATH/examples/sample-config-files/server.conf.gz $VPNPATH
     gunzip -f $VPNPATH/server.conf.gz
     cp -r $EASYRSA $VPNPATH/easy-rsa2
-    cp $USRPATH/examples/sample-config-files/server.conf.gz $VPNPATH
-
+   
     #The SSL-version we will be using
     cp $VPNPATH/easy-rsa2/openssl-1.0.0.cnf $VPNPATH/easy-rsa2/openssl.cnf
 
     #Copy user configs
     cp $VARSFILE $VPNPATH/easy-rsa2/
     cp $OVPNCONF $VPNPATH
-    echo "###Successfully copied openvpn-example###"
+    echo "###Copied openvpn-example###"
 }
 
 function build_ca {
@@ -63,7 +77,10 @@ function build_ca {
     export EASY_RSA="${EASY_RSA:-.}"
     "$EASY_RSA/pkitool" --initca $*
 
-    echo "###Successfully made Certificate Authority###"
+    echo "###Made Certificate Authority###"
+    
+    bash $VPNPATH/easy-rsa2/build-dh
+     echo "###Completed build-dh###"
 } &> /dev/null
 #Remove &> /dev/null to debug
 
@@ -76,9 +93,26 @@ function build_key {
 
 #Test if setup-directories are where they ought to be
 if [[ -d "$USRPATH" && -d "$VPNPATH" ]]; then
-    copy_examples
-    build_ca
-    build_key client1
-    #build_key client2
-    #build_key client3
+
+    if [ "$#" == 0 ]; then
+        echo -e "You must call this script with:"
+        echo -e "\tovpn-install.sh install\t\t to install OpenVPN and easy-rsa"
+        echo -e "\tovpn-install.sh prepare\t\t to copy vars and "
+        echo -e "\t\t\t\t\t server.conf example for editing"
+        echo -e "\tovpn-install.sh build-ca\t to build the CA"
+        echo -e "\tovpn-install.sh build-key\t to build a user key"
+        
+    elif [ "$1" == 'install' ]; then
+        install
+    elif [ "$1" == 'prepare' ]; then
+        prepare
+    elif [ "$1" == 'build-ca' ]; then
+        build_ca
+    elif [ "$1" == 'build-key' ]; then
+        if [ ! -z "$2" ]; then
+            build_key $2
+        else
+            build_key client
+        fi
+    fi
 fi
