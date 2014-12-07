@@ -2,8 +2,7 @@
 #
 # This script deploys OpenVPN auto-magically and can create client-keys.
 # Tested on Ubuntu 14.04, this will work on many Debian-based distros.
-# However, you might have to change some variables. Uncomment build_key 
-# in lines 80ff for multiple client-key-generation.
+# However, you might have to change some variables.
 #
 # LICENSE
 # Copyright (C) 2014 Steffen Sauler
@@ -80,7 +79,7 @@ function build_ca {
     echo "###Made Certificate Authority###"
     
     bash $VPNPATH/easy-rsa2/build-dh
-     echo "###Completed build-dh###"
+    echo "###Completed build-dh###"
 } &> /dev/null
 #Remove &> /dev/null to debug
 
@@ -95,12 +94,13 @@ function build_key {
 if [[ -d "$USRPATH" && -d "$VPNPATH" ]]; then
 
     if [ "$#" == 0 ]; then
+        echo -e "This script deploys OpenVPN and creates client-keys."
         echo -e "You must call this script with:"
         echo -e "\tovpn-install.sh install\t\t to install OpenVPN and easy-rsa"
         echo -e "\tovpn-install.sh prepare\t\t to copy vars and "
         echo -e "\t\t\t\t\t server.conf example for editing"
         echo -e "\tovpn-install.sh build-ca\t to build the CA"
-        echo -e "\tovpn-install.sh build-key\t to build a user key"
+        echo -e "\tovpn-install.sh build-key name\t to build a user key"
         
     elif [ "$1" == 'install' ]; then
         install
