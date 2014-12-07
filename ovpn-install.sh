@@ -27,8 +27,8 @@ USRPATH="/usr/share/doc/openvpn"
 VPNPATH="/etc/openvpn"
 EASYRSA="/usr/share/easy-rsa"
 
-#You must run this as sudo or root or install manually.
-#If you already installed OpenVPN and easy-rsa, this will do nothing
+# You must run this as sudo or root or install manually.
+# If you already installed OpenVPN and easy-rsa, this will do nothing
 function install {
     if [ "$EUID" -ne 0 ]; then
         echo "You have no permissions to install. Please run as root."
@@ -44,7 +44,7 @@ function install {
     fi
 }
 
-#Copy examples to local directory for editing
+# Copy examples to local directory for editing
 function prepare {
     cp $USRPATH/examples/sample-config-files/server.conf.gz .
     gunzip -f ./server.conf.gz
@@ -52,15 +52,16 @@ function prepare {
 }
 
 function copy_examples {
-    #Copy examples
+    # Copy examples
+    # server.conf.gz is copied in case no server.conf is provided
     cp $USRPATH/examples/sample-config-files/server.conf.gz $VPNPATH
     gunzip -f $VPNPATH/server.conf.gz
     cp -r $EASYRSA $VPNPATH/easy-rsa2
    
-    #The SSL-version we will be using
+    # The SSL-version we will be using
     cp $VPNPATH/easy-rsa2/openssl-1.0.0.cnf $VPNPATH/easy-rsa2/openssl.cnf
 
-    #Copy user configs
+    # Copy user configs
     cp $VARSFILE $VPNPATH/easy-rsa2/
     cp $OVPNCONF $VPNPATH
     echo "###Copied openvpn-example###"
@@ -68,11 +69,11 @@ function copy_examples {
 
 function build_ca {
     mkdir $VPNPATH/easy-rsa2/keys
-    source $VPNPATH/easy-rsa2/vars        #Reading settings
-    bash $VPNPATH/easy-rsa2/clean-all     #Will delete keys/
+    source $VPNPATH/easy-rsa2/vars        # Reading settings
+    bash $VPNPATH/easy-rsa2/clean-all     # Will delete keys/
 
-    #Avoiding user interaction by not calling build-ca
-    #(Creating the CA on the server itself might be a security issue)
+    # Avoiding user interaction by not calling build-ca
+    # (Creating the CA on the server itself might be a security issue)
     export EASY_RSA="${EASY_RSA:-.}"
     "$EASY_RSA/pkitool" --initca $*
 
@@ -81,16 +82,17 @@ function build_ca {
     bash $VPNPATH/easy-rsa2/build-dh
     echo "###Completed build-dh###"
 } &> /dev/null
-#Remove &> /dev/null to debug
+# Remove &> /dev/null to debug
 
 function build_key {
-    #Avoiding user interaction by not calling build-key
+    # Avoiding user interaction by not calling build-key
     export EASY_RSA="${EASY_RSA:-.}"
     "$EASY_RSA/pkitool" $* &> /dev/null
     echo "###Making key for $1###"
 }
 
-#Test if setup-directories are where they ought to be
+# Test if setup-directories are where they ought to be
+# Then testing first argument and whether an action should be taken
 if [[ -d "$USRPATH" && -d "$VPNPATH" ]]; then
 
     if [ "$#" == 0 ]; then
